@@ -36,9 +36,11 @@ library(extrafontdb)
 library(extrafont)
 loadfonts()
 
+
 # Set paths
+setwd("/Users/marisasobel/Desktop/Maya & Metals/NHANES_metals")
 datapath <- ".Data/NHANES_data/"
-folder.output <- "Output/07-08"
+folder.output <- "Output/09-10"
 if( !file.exists( folder.output ) ) {
   dir.create( file.path( folder.output ))
 }
@@ -105,8 +107,8 @@ setwd("/Users/marisasobel/Desktop/Maya & Metals/NHANES_metals/NHANES_data/09-10"
 demo0910 <- read.xport("DEMO_F.XPT") %>% as_tibble()
 dim(demo0910)
 # pregnancy 
-#preg0910 <- read.delim("UCPREG_F.XPT.txt") %>% as_tibble()
-#dim(preg0910)
+preg0910 <- read.xport("UCPREG_F.XPT") %>% as_tibble()
+dim(preg0910)
 # urinary u_metals 
 ur0910 <- read.xport("UHM_F.XPT") %>% as_tibble()
 dim(ur0910)
@@ -114,17 +116,17 @@ dim(ur0910)
 as0910 <- read.xport("UAS_F.XPT") %>% as_tibble() %>% select(- WTSA2YR, -URXUCR) # remove duplicate variables 
 dim(as0910)
 # blood u_metals
-#bl0910 <- read.xport("PBCD_E.XPT") # includes blood mercury, lead, cadmium --> see if Annie has a file!
-#dim(bl0910)
+bl0910 <- read.xport("PBCD_F.XPT") # includes blood mercury, lead, cadmium --> see if Annie has a file!
+dim(bl0910)
 
 ## -------- MERGE -------- ##
 # merge (Annie's way)
 nh0910 <-merge(demo0910,ur0910,by="SEQN",all=T)
 nh0910 <-merge(nh0910,as0910,by="SEQN",all=T)
-# nh0910 <-merge(nh0910,bl0910,by="SEQN",all=T)
-# nh0910 <-merge(nh0910,preg0910,by="SEQN",all=T)
+nh0910 <-merge(nh0910,bl0910,by="SEQN",all=T)
+nh0910 <-merge(nh0910,preg0910,by="SEQN",all=T)
 nh0910 <- as_tibble(nh0910)
-dim(nh0910) # 10537 col, 93 var
+dim(nh0910) # 10537 col, 95 var
 colnames(nh0910) # --> same problem 
 # checking the two repeated variables are the same (weights and urinary creatinine) --> they are, remove from 2nd file before merging 
 # nh0910 has demo, urine u_metals, as urine metabolites, blood u_metals 
@@ -221,13 +223,13 @@ w_pct <- u_metals %>% tabyl(URDUTULC) %>% filter(URDUTULC == 0) %>% pull(percent
 u_pct <- u_metals %>% tabyl(URDUURLC) %>% filter(URDUURLC == 0) %>% pull(percent) 
 
 u_metals_ALOD_table <- rbind(ba_pct, be_pct, cd_pct, co_pct, cs_pct, mo_pct, pb_pct, pt_pct, sb_pct, tl_pct, w_pct, u_pct) 
-colnames(u_metals_ALOD_table) <- "percent"
+colnames(u_metals_ALOD_table) <- "percent_aLOD"
 
 u_metals_ALOD_table <- u_metals_ALOD_table %>% 
   as_tibble() %>% 
   mutate(
     metal = u_metals_names, 
-    use = ifelse(percent >= 0.4, "yes", "no")) %>% 
+    use = ifelse(percent_aLOD >= 0.4, "yes", "no")) %>% 
   relocate(metal)
 
 u_metals_ALOD_table
@@ -285,13 +287,13 @@ mma_pct <- as_metals %>% tabyl(URDUMMAL) %>% filter(URDUMMAL == 0) %>% pull(perc
 tmo_pct <- as_metals %>% tabyl(URDUTMLC) %>% filter(URDUTMLC == 0) %>% pull(percent) 
 
 as_metals_ALOD_table <- rbind(as_pct, a3_pct, a5_pct, ab_pct, ac_pct, dma_pct, mma_pct, tmo_pct) 
-colnames(as_metals_ALOD_table) <- "percent"
+colnames(as_metals_ALOD_table) <- "percent_aLOD"
 
 as_metals_ALOD_table <- as_metals_ALOD_table %>% 
   as_tibble() %>% 
   mutate(
     metal = as_metals_names, 
-    use = ifelse(percent >= 0.4, "yes", "no")) %>% 
+    use = ifelse(percent_aLOD >= 0.4, "yes", "no")) %>% 
   relocate(metal)
 
 as_metals_ALOD_table
@@ -331,13 +333,13 @@ thg_n <- b_metals %>% filter(LBDTHGLC == 1) %>% count(SEQN) %>% tally(n) %>% pul
 thg_pct <- thg_n / b_metals_total 
 
 b_metals_ALOD_table <- rbind(cd_pct, pb_pct, thg_pct) 
-colnames(b_metals_ALOD_table) <- "percent"
+colnames(b_metals_ALOD_table) <- "percent_BLOD"
 
 b_metals_ALOD_table <- b_metals_ALOD_table %>% 
   as_tibble() %>% 
   mutate(
     metal = b_metals_names, 
-    use = ifelse(percent < 0.4, "yes", "no")) %>% 
+    use = ifelse(percent_BLOD < 0.4, "yes", "no")) %>% 
   relocate(metal)
 
 b_metals_ALOD_table
@@ -644,26 +646,26 @@ nh0910 %>%
   tabyl(RIDEXPRG) %>% adorn_totals()                # correct numbers based on NHANES DEMO documentation
                                                     # 68 pregnant, 1266 not, 71 cannot ascertain 
 # pregnancy status by lab variable 
-# nh0910 %>% 
-#   filter(RIAGENDR == 2) %>%                       # 1 = male, 2 = female            --> remove 5,312
-#   filter(RIDAGEYR >= 20 & RIDAGEYR <= 44) %>%     # restrict age                    --> remove 1,405
-#   tabyl(URXPREG) %>% adorn_totals()               # 57 positive, 1094 negative, 28 not done, 29 missing 
+nh0910 %>% 
+  filter(RIAGENDR == 2) %>%                       # 1 = male, 2 = female            --> remove 5,312
+  filter(RIDAGEYR >= 20 & RIDAGEYR <= 44) %>%     # restrict age                    --> remove 1,405
+  tabyl(URXPREG) %>% adorn_totals()               # 68 positive, 1288 negative, 21 not done, 28 missing 
 
 # pregnancy status comparison
-# nh0910 %>% 
-#   as_tibble() %>% 
-#   tabyl(RIDEXPRG, URXPREG) %>% 
-#   adorn_totals(where = c("row", "col")) %>% 
-#   adorn_title()
+nh0910 %>%
+  as_tibble() %>%
+  tabyl(RIDEXPRG, URXPREG) %>%
+  adorn_totals(where = c("row", "col")) %>%
+  adorn_title()
 
 # pregnancy status - NEW VARIABLE 
-# nh0910 %>% 
-#   as_tibble() %>% 
-#   mutate(preg_status = ifelse(RIDEXPRG == 1, 1, 0)) %>% 
-#   mutate(preg_status1 = case_when(
-#     RIDEXPRG == 1 & URXPREG == 1 ~ 1, 
-#     URXPREG == 2 ~ 0)) %>% 
-#   tabyl(preg_status1) # use this one
+nh0910 %>%
+  as_tibble() %>%
+  mutate(preg_status = ifelse(RIDEXPRG == 1, 1, 0)) %>%
+  mutate(preg_status1 = case_when(
+    RIDEXPRG == 1 & URXPREG == 1 ~ 1,
+    URXPREG == 2 ~ 0)) %>%
+  tabyl(preg_status1) # use this one
 
 # race/ethnicity:    
 nh0910 %>%                                          # 1 = Mexican-American 
@@ -675,10 +677,10 @@ nh0910 %>%                                          # 1 = Mexican-American
 # CREATE DATASET --- limit to females aged 20-44 (N=1,208) and make pregnancy variable 
 nh0910_f = nh0910 %>% 
   filter(RIAGENDR == 2) %>%                         # 1 = male, 2 = female            --> remove 5,312
-  filter(RIDAGEYR >= 20 & RIDAGEYR <= 44) #%>%       # restrict age                    --> remove 1,405
-  # mutate(preg_status = case_when(                   # preg_status = 1  --> pregnant 
-  #   RIDEXPRG == 1 & URXPREG == 1 ~ 1,               # preg_status = 0  --> not pregnant
-  #   URXPREG == 2 ~ 0))                              # preg_status = NA --> missing or not known 
+  filter(RIDAGEYR >= 20 & RIDAGEYR <= 44) %>%       # restrict age                    --> remove 1,405
+  mutate(preg_status = case_when(                   # preg_status = 1  --> pregnant
+    RIDEXPRG == 1 & URXPREG == 1 ~ 1,               # preg_status = 0  --> not pregnant
+    URXPREG == 2 ~ 0))                              # preg_status = NA --> missing or not known
 #
 ######          - URINARY DATA ####
 # N=2941 with urinary metal measurements in TOTAL (from original NHANES data)
@@ -690,10 +692,10 @@ nh0910_f %>%
 
 # MAKE CREATININE INTO CORRECT UNITS + MAKE NEW URINARY METAL VAR
 u_metals = nh0910_f %>% 
-  drop_na(URXUCR) %>%                               # drop missing urinary creatinine --> remove 476
-  filter(!is.na(URXUBA)) %>%                        # drop missing urinary u_metals     --> remove 9
+  drop_na(URXUCR) %>%                               # drop missing urinary creatinine --> remove 929
+  filter(!is.na(URXUBA)) %>%                        # drop missing urinary u_metals   --> remove 9
   mutate(cr_g_l = URXUCR / 100) %>%                 # urinary creatinine in mg/dL     --> /100 for g/L
-  mutate(                                           # create u_metals in ug/g cr        --> /cr_g_l for ug/g creatinine 
+  mutate(                                           # create u_metals in ug/g cr      --> /cr_g_l for ug/g creatinine 
     uba_ugg = URXUBA / cr_g_l, 
     ube_ugg = URXUBE / cr_g_l, 
     ucd_ugg = URXUCD / cr_g_l, 
@@ -727,13 +729,13 @@ w_pct <- u_metals %>% tabyl(URDUTULC) %>% filter(URDUTULC == 0) %>% pull(percent
 u_pct <- u_metals %>% tabyl(URDUURLC) %>% filter(URDUURLC == 0) %>% pull(percent) 
 
 u_metals_ALOD_table <- rbind(ba_pct, be_pct, cd_pct, co_pct, cs_pct, mo_pct, pb_pct, pt_pct, sb_pct, tl_pct, w_pct, u_pct) 
-colnames(u_metals_ALOD_table) <- "percent"
+colnames(u_metals_ALOD_table) <- "percent_aLOD"
 
 u_metals_ALOD_table <- u_metals_ALOD_table %>% 
   as_tibble() %>% 
   mutate(
     metal = u_metals_names, 
-    use = ifelse(percent >= 0.4, "yes", "no")) %>% 
+    use = ifelse(percent_aLOD >= 0.4, "yes", "no")) %>% 
   relocate(metal)
 
 u_metals_ALOD_table
@@ -744,14 +746,118 @@ u_metals_names <- colnames(u_metals_ALOD) %>% str_remove("URDU") %>% str_remove(
 
 # u_metals DATAFRAME ONLY --- grab urine u_metals corrected for urinary creatinine & survey variables (N=467)
 u_metals <- u_metals %>% 
-  select(contains("ugg"), RIDRETH1, SDMVPSU, SDMVSTRA, WTSA2YR) %>%  #preg_status ----> ADD IN WHEN
+  select(contains("ugg"), RIDRETH1, preg_status, SDMVPSU, SDMVSTRA, WTSA2YR) %>%  
   select(-contains(c("be", "pt"))) %>% 
-  drop_na()
+  drop_na(-preg_status)
 dim(u_metals)
 head(u_metals)
 
 ######          - As SPECIES DATA ####
+# N=2941 with urinary As species measurements in TOTAL (from original NHANES data)
+dim(as0910)
+colnames(as0910)
+# 929 missing urinary creatinine in subset 
+nh0910_f %>% 
+  select(URXUCR, contains("URX")) %>% 
+  filter(is.na(URXUCR)) %>% 
+  tabyl(URXUCR)
+
+# MAKE CREATININE INTO CORRECT UNITS + MAKE NEW URINARY AS VAR (N=471)
+as_metals = nh0910_f %>% 
+  drop_na(URXUCR) %>%                               # drop missing urinary creatinine --> remove 929
+  drop_na(URXUAS) %>%                               # drop missing total As           --> remove 5
+  # drop_na(URXUAS3) %>%                            # none missing As species
+  mutate(cr_g_l = URXUCR / 100) %>%                 # urinary creatinine in mg/dL     --> /100 for g/L
+  mutate(                                           # create u_metals in ug/g cr      --> /cr_g_l for ug/g creatinine 
+    uas_ugg = URXUAS / cr_g_l, 
+    uas3_ugg = URXUAS3 / cr_g_l, 
+    uas5_ugg = URXUAS5 / cr_g_l, 
+    uab_ugg = URXUAB / cr_g_l, 
+    uac_ugg = URXUAC / cr_g_l, 
+    udma_ugg = URXUDMA / cr_g_l, 
+    umma_ugg = URXUMMA / cr_g_l, 
+    utmo_ugg = URXUTM / cr_g_l)
+
+# PERCENT AT/ABOVE LOD 
+as_metals_ALOD <- as_metals %>% select(contains("URD")) %>% select(13:20)
+as_metals_names <- colnames(as_metals_ALOD) %>% str_remove("URDU") %>% str_remove("LC") %>% str_remove("L")
+as_metals_names <- str_replace(as_metals_names, "DA", "DMA")
+as_metals_names <- str_replace(as_metals_names, "TM", "TMO")
+
+as_pct <- as_metals %>% tabyl(URDUASLC) %>% filter(URDUASLC == 0) %>% pull(percent) 
+a3_pct <- as_metals %>% tabyl(URDUA3LC) %>% filter(URDUA3LC == 0) %>% pull(percent)
+a5_pct <- as_metals %>% tabyl(URDUA5LC) %>% filter(URDUA5LC == 0) %>% pull(percent) 
+ab_pct <- as_metals %>% tabyl(URDUABLC) %>% filter(URDUABLC == 0) %>% pull(percent)
+ac_pct <- as_metals %>% tabyl(URDUACLC) %>% filter(URDUACLC == 0) %>% pull(percent)
+dma_pct <- as_metals %>% tabyl(URDUDALC) %>% filter(URDUDALC == 0) %>% pull(percent) 
+mma_pct <- as_metals %>% tabyl(URDUMMAL) %>% filter(URDUMMAL == 0) %>% pull(percent) 
+tmo_pct <- as_metals %>% tabyl(URDUTMLC) %>% filter(URDUTMLC == 0) %>% pull(percent) 
+
+as_metals_ALOD_table <- rbind(as_pct, a3_pct, a5_pct, ab_pct, ac_pct, dma_pct, mma_pct, tmo_pct) 
+colnames(as_metals_ALOD_table) <- "percent_aLOD"
+
+as_metals_ALOD_table <- as_metals_ALOD_table %>% 
+  as_tibble() %>% 
+  mutate(
+    metal = as_metals_names, 
+    use = ifelse(percent_aLOD >= 0.4, "yes", "no")) %>% 
+  relocate(metal)
+
+as_metals_ALOD_table
+
+# URINE As metals TO USE (2009-2010)
+as_metals_ALOD <- as_metals %>% select(contains("URD")) %>% select(13:20) %>% select(-contains(c("a3", "a5", "ac", "tm")))
+as_metals_names <- colnames(as_metals_ALOD) %>% str_remove("URDU") %>% str_remove("LC") %>% str_remove("L")
+as_metals_names <- str_replace(as_metals_names, "DA", "DMA")
+
+# As metals DATAFRAME ONLY --- grab as species corrected for urinary creatinine & survey variables (N=471)
+as_metals <- as_metals %>% 
+  select(contains("ugg"), RIDRETH1, preg_status, SDMVPSU, SDMVSTRA, WTSA2YR) %>% 
+  select(-contains(c("as3", "as5", "ac", "tm"))) %>% 
+  drop_na(-preg_status)
+dim(as_metals)
+head(as_metals)
+#
 ######          - BLOOD DATA ####
+# N=9835 with urinary As species measurements in TOTAL (from original NHANES data)
+dim(bl0910)
+colnames(bl0910)
+
+# drop missing blood metals
+b_metals = nh0910_f %>% 
+  drop_na(LBXBCD)                                   # drop missing blood metals --> remove 85
+
+# PERCENT AT/ABOVE LOD 
+b_metals_total <- b_metals %>% count(SEQN) %>% tally(n) %>% pull(n)
+b_metals_ALOD <- b_metals %>% select(contains("LBX")) 
+b_metals_names <- colnames(b_metals_ALOD) %>% str_remove("LBXB") %>% str_remove("LBX")
+
+cd_n <- b_metals %>% filter(LBXBCD <= 0.14) %>% count(SEQN) %>% tally(n) %>% pull(n)
+cd_pct <- cd_n / b_metals_total
+pb_n <- b_metals %>% filter(LBXBPB <= 0.18) %>% count(SEQN) %>% tally(n) %>% pull(n)
+pb_pct <- pb_n / b_metals_total
+thg_n <- b_metals %>% filter(LBDTHGLC == 1) %>% count(SEQN) %>% tally(n) %>% pull(n)
+thg_pct <- thg_n / b_metals_total 
+
+b_metals_ALOD_table <- rbind(cd_pct, pb_pct, thg_pct) 
+colnames(b_metals_ALOD_table) <- "percent_BLOD"
+
+b_metals_ALOD_table <- b_metals_ALOD_table %>% 
+  as_tibble() %>% 
+  mutate(
+    metal = b_metals_names, 
+    use = ifelse(percent_BLOD < 0.4, "yes", "no")) %>% 
+  relocate(metal)
+
+b_metals_ALOD_table
+
+# Blood metals DATAFRAME ONLY --- grab as species corrected for urinary creatinine & survey variables (N=1320)
+b_metals <- b_metals %>% 
+  select(contains("LBX"), RIDRETH1, preg_status, SDMVPSU, SDMVSTRA, WTMEC2YR) 
+dim(b_metals)
+head(b_metals)
+
+
 ######      2.B URINARY ANALYSES ####
 u_metals_names
 # SET SURVEY DESIGN 
@@ -898,7 +1004,149 @@ NH0910_U
 
 
 ######      2. C ARSENIC SPECIES ANALYSES ####
+as_metals_names
+# SET SURVEY DESIGN 
+as0910.svy <- svydesign(ids=~SDMVPSU,strata=~SDMVSTRA,weights=~WTSA2YR,nest=T,data=as_metals) #use urinary sample weights; 1/3 random subsample
+
+# SET MEAN FXN
+svy_mean <- function(x) { 
+  mean_svy <- svymean(~x, as0910.svy, na.rm = TRUE)
+  m_svy <- mean_svy[1]
+  return(m_svy)
+}
+
+# SET GEO MEAN FXN
+svy_geo_mean <- function(x) { 
+  meanlog_svy <- exp(svymean(~log(x), as0910.svy, na.rm = TRUE))
+  gm_svy <- meanlog_svy[1]
+  return(gm_svy)
+}
+# check fxn 
+meanlog_svy <- exp(svymean(~log(uas_ugg), as0910.svy, na.rm = TRUE))
+gm_svy <- meanlog_svy[1]
+gm_svy
+svy_geo_mean(as_metals$uas_ugg)
+
+
+######          - AS ####
+nav <- nrow(as_metals[which(!is.na(as_metals$uas_ugg)),])
+min <- min(as_metals$uas_ugg,na.rm=T)
+quant <- as.data.frame(svyquantile(~uas_ugg, as0910.svy, c(0.1, 0.25, 0.5, 0.75, 0.9,0.95, 0.99),ci=F,na.rm=T))
+quant2 <- data.frame(t(quant[]))
+max <- max(as_metals$uas_ugg,na.rm=T)
+mean <- svymean(~uas_ugg, as0910.svy, na.rm=T)
+gm <- exp(svymean(~log(uas_ugg), as0910.svy, na.rm = TRUE))
+NH0910_AS <- rbind(nav,min,quant2,max,mean,gm)
+#
+######          - AB ####
+nav <- nrow(as_metals[which(!is.na(as_metals$uab_ugg)),])
+min <- min(as_metals$uab_ugg,na.rm=T)
+quant <- as.data.frame(svyquantile(~uab_ugg, as0910.svy, c(0.1, 0.25, 0.5, 0.75, 0.9,0.95, 0.99),ci=F,na.rm=T))
+quant2 <- data.frame(t(quant[]))
+max <- max(as_metals$uab_ugg,na.rm=T)
+mean <- svymean(~uab_ugg, as0910.svy, na.rm=T)
+gm <- exp(svymean(~log(uab_ugg), as0910.svy, na.rm = TRUE))
+NH0910_AB <- rbind(nav,min,quant2,max,mean,gm)
+NH0910_AS <- cbind(NH0910_AS, NH0910_AB)
+#
+######          - DMA ####
+nav <- nrow(as_metals[which(!is.na(as_metals$udma_ugg)),])
+min <- min(as_metals$udma_ugg,na.rm=T)
+quant <- as.data.frame(svyquantile(~udma_ugg, as0910.svy, c(0.1, 0.25, 0.5, 0.75, 0.9,0.95, 0.99),ci=F,na.rm=T))
+quant2 <- data.frame(t(quant[]))
+max <- max(as_metals$udma_ugg,na.rm=T)
+mean <- svymean(~udma_ugg, as0910.svy, na.rm=T)
+gm <- exp(svymean(~log(udma_ugg), as0910.svy, na.rm = TRUE))
+NH0910_dma <- rbind(nav,min,quant2,max,mean,gm)
+NH0910_AS <- cbind(NH0910_AS, NH0910_dma)
+#
+######          - MMA ####
+nav <- nrow(as_metals[which(!is.na(as_metals$umma_ugg)),])
+min <- min(as_metals$umma_ugg,na.rm=T)
+quant <- as.data.frame(svyquantile(~umma_ugg, as0910.svy, c(0.1, 0.25, 0.5, 0.75, 0.9,0.95, 0.99),ci=F,na.rm=T))
+quant2 <- data.frame(t(quant[]))
+max <- max(as_metals$umma_ugg,na.rm=T)
+mean <- svymean(~umma_ugg, as0910.svy, na.rm=T)
+gm <- exp(svymean(~log(umma_ugg), as0910.svy, na.rm = TRUE))
+NH0910_mma <- rbind(nav,min,quant2,max,mean,gm)
+NH0910_AS <- cbind(NH0910_AS, NH0910_mma)
+#
+######          --------TABLE ####
+rownames(NH0910_AS)[1] <- "N"
+rownames(NH0910_AS)[2] <- "Min"
+rownames(NH0910_AS)[10] <- "Max"
+rownames(NH0910_AS)[11] <- "Mean"
+rownames(NH0910_AS)[12] <- "Geometric Mean"
+colnames(NH0910_AS) <- as_metals_names
+NH0910_AS <- round(NH0910_AS, digits = 5)
+NH0910_AS
+#
 ######      2. D BlOOD ANALYSES ####
+b_metals_names
+# SET SURVEY DESIGN 
+blood0910.svy <- svydesign(ids=~SDMVPSU,strata=~SDMVSTRA,weights=~WTMEC2YR,nest=T,data=b_metals) #use urinary sample weights; 1/3 random subsample
+
+# SET MEAN FXN
+svy_mean <- function(x) { 
+  mean_svy <- svymean(~x, blood0910.svy, na.rm = TRUE)
+  m_svy <- mean_svy[1]
+  return(m_svy)
+}
+
+# SET GEO MEAN FXN
+svy_geo_mean <- function(x) { 
+  meanlog_svy <- exp(svymean(~log(x), blood0910.svy, na.rm = TRUE))
+  gm_svy <- meanlog_svy[1]
+  return(gm_svy)
+}
+# check fxn 
+meanlog_svy <- exp(svymean(~log(LBXBCD), blood0910.svy, na.rm = TRUE))
+gm_svy <- meanlog_svy[1]
+gm_svy
+svy_geo_mean(b_metals$LBXBCD)
+
+
+######          - CD ####
+nav <- nrow(b_metals[which(!is.na(b_metals$LBXBCD)),])
+min <- min(b_metals$LBXBCD,na.rm=T)
+quant <- as.data.frame(svyquantile(~LBXBCD, blood0910.svy, c(0.1, 0.25, 0.5, 0.75, 0.9,0.95, 0.99),ci=F,na.rm=T))
+quant2 <- data.frame(t(quant[]))
+max <- max(b_metals$LBXBCD,na.rm=T)
+mean <- svymean(~LBXBCD, blood0910.svy, na.rm=T)
+gm <- exp(svymean(~log(LBXBCD), blood0910.svy, na.rm = TRUE))
+NH0910_B <- rbind(nav,min,quant2,max,mean,gm)
+#
+######          - PB ####
+min <- min(b_metals$LBXBPB,na.rm=T)
+quant <- as.data.frame(svyquantile(~LBXBPB, blood0910.svy, c(0.1, 0.25, 0.5, 0.75, 0.9,0.95, 0.99),ci=F,na.rm=T))
+quant2 <- data.frame(t(quant[]))
+max <- max(b_metals$LBXBPB,na.rm=T)
+mean <- svymean(~LBXBPB, blood0910.svy, na.rm=T)
+gm <- exp(svymean(~log(LBXBPB), blood0910.svy, na.rm = TRUE))
+NH0910_PB <- rbind(nav,min,quant2,max,mean,gm)
+NH0910_B <- cbind(NH0910_B, NH0910_PB)
+#
+######          - THG ####
+min <- min(b_metals$LBXTHG,na.rm=T)
+quant <- as.data.frame(svyquantile(~LBXTHG, blood0910.svy, c(0.1, 0.25, 0.5, 0.75, 0.9,0.95, 0.99),ci=F,na.rm=T))
+quant2 <- data.frame(t(quant[]))
+max <- max(b_metals$LBXTHG,na.rm=T)
+mean <- svymean(~LBXTHG, blood0910.svy, na.rm=T)
+gm <- exp(svymean(~log(LBXTHG), blood0910.svy, na.rm = TRUE))
+NH0910_THG <- rbind(nav,min,quant2,max,mean,gm)
+NH0910_B <- cbind(NH0910_B, NH0910_THG)
+#
+######          --------TABLE ####
+rownames(NH0910_B)[1] <- "N"
+rownames(NH0910_B)[2] <- "Min"
+rownames(NH0910_B)[10] <- "Max"
+rownames(NH0910_B)[11] <- "Mean"
+rownames(NH0910_B)[12] <- "Geometric Mean"
+colnames(NH0910_B) <- b_metals_names
+NH0910_B <- round(NH0910_B, digits = 5)
+NH0910_B
+
+
 ###### 3. NHANES 2011-2012 ####
 ######      3.A Clean & Tidy ####
 ######      3.B URINARY ANALYSES ####
@@ -907,7 +1155,7 @@ NH0910_U
 ######
 ######
 ###### APPENDIX: TABLES ####
-######  ----- SET OUTPATH FOR YEAR ######  ----- ####
+######  ----- SET OUTPATH FOR YEAR ----- ####
 # 2007-2008 ####
 NH0708_U
 NH0708_AS
@@ -919,6 +1167,9 @@ write_csv(NH0708_B, file = paste0(outpath, "/07-08_blood.csv"))
 NH0910_U
 NH0910_AS
 NH0910_B
+write_csv(NH0910_U, file = paste0(outpath, "/09-10_urine.csv"))
+write_csv(NH0910_AS, file = paste0(outpath, "/09-10_as-species.csv"))
+write_csv(NH0910_B, file = paste0(outpath, "/09-10_blood.csv"))
 # 2011-2012 ####
 NH1112_U
 NH1112_AS
