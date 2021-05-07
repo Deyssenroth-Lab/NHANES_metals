@@ -54,11 +54,10 @@ convert.to.ci <- function( vector )
 }
 
 ######      0.A Load NHANES 2007-2008 -----####
-# NHANES 2007-2008 is urinary mercury in 1/3 subset of all participants >6yrs age; blood mercury is children 1-5 and women childbearing age
 # Demographics
-# Urinary u_metals: creatinine + u_metals [Ba, Be, Cd, Co, Cs, Mo, Pb, Pt, Sb, Tl, W, U]
+# Urinary metals: creatinine + metals [Ba, Be, Cd, Co, Cs, Mo, Pb, Pt, Sb, Tl, W, U]
 # Urinary Arsenic: creatinine + totals + speciated 
-# Blood u_metals: Cd, Pb, Hg (total)
+# Blood metals: Cd, Pb, Hg (total)
 
 # SET WD
 setwd("/Users/marisasobel/Desktop/Maya & Metals/NHANES_metals/NHANES_data/07-08")
@@ -70,13 +69,13 @@ dim(demo0708)
 # pregnancy 
 preg0708 <- read.xport("UCPREG_E.XPT") %>% as_tibble()
 dim(preg0708)
-# urinary u_metals 
+# urinary metals 
 ur0708 <- read.xport("UHM_E.XPT") %>% as_tibble()
 dim(ur0708)
 # urinary arsenic
 as0708 <- read.xport("UAS_E.XPT") %>% as_tibble() %>% select(- WTSA2YR, -URXUCR) # remove duplicate variables 
 dim(as0708)
-# blood u_metals
+# blood metals
 bl0708 <- read.xport("PBCD_E.XPT") # includes blood mercury, lead, cadmium --> see if Annie has a file!
 dim(bl0708)
 
@@ -90,14 +89,13 @@ nh0708 <- as_tibble(nh0708)
 dim(nh0708) # 10149 col, 93 var
 colnames(nh0708) # --> same problem 
 # checking the two repeated variables are the same (weights and urinary creatinine) --> they are, remove from 2nd file before merging 
-# nh0708 has demo, urine u_metals, as urine metabolites, blood u_metals 
+# nh0708 has demo, urine metals, as urine metabolites, blood metals 
 #
 ######      0.B Load NHANES 2009-2010 ####
-# NHANES 2009-2010 is urinary mercury in 1/3 subset of all participants >6yrs age; blood mercury is children 1-5 and women childbearing age
 # Demographics
-# Urinary u_metals: creatinine + u_metals [Ba, Be, Cd, Co, Cs, Mo, Pb, Pt, Sb, Tl, W, U]
+# Urinary metals: creatinine + metals [Ba, Be, Cd, Co, Cs, Mo, Pb, Pt, Sb, Tl, W, U]
 # Urinary Arsenic: creatinine + totals + speciated 
-# Blood u_metals: Cd, Pb, Hg (total)
+# Blood metals: Cd, Pb, Hg (total)
 
 # SET WD
 setwd("/Users/marisasobel/Desktop/Maya & Metals/NHANES_metals/NHANES_data/09-10")
@@ -109,13 +107,13 @@ dim(demo0910)
 # pregnancy 
 preg0910 <- read.xport("UCPREG_F.XPT") %>% as_tibble()
 dim(preg0910)
-# urinary u_metals 
+# urinary metals 
 ur0910 <- read.xport("UHM_F.XPT") %>% as_tibble()
 dim(ur0910)
 # urinary arsenic
 as0910 <- read.xport("UAS_F.XPT") %>% as_tibble() %>% select(- WTSA2YR, -URXUCR) # remove duplicate variables 
 dim(as0910)
-# blood u_metals
+# blood metals
 bl0910 <- read.xport("PBCD_F.XPT") # includes blood mercury, lead, cadmium --> see if Annie has a file!
 dim(bl0910)
 
@@ -129,9 +127,51 @@ nh0910 <- as_tibble(nh0910)
 dim(nh0910) # 10537 col, 95 var
 colnames(nh0910) # --> same problem 
 # checking the two repeated variables are the same (weights and urinary creatinine) --> they are, remove from 2nd file before merging 
-# nh0910 has demo, urine u_metals, as urine metabolites, blood u_metals 
+# nh0910 has demo, urine metals, as urine metabolites, blood metals 
 #
 ######      0.C Load NHANES 2011-2012 ####
+# Demographics
+# Urinary metals: creatinine + metals [Ba, Be, Cd, Co, Cs, Mo, Pb, Pt, Sb, Tl, W, U]
+# Urinary Arsenic: creatinine + totals + speciated 
+# Blood metals: Cd, Pb, Hg (total), Se, Mn
+# Serum metals: Cu, Se, Zn
+
+# SET WD
+setwd("/Users/marisasobel/Desktop/Maya & Metals/NHANES_metals/NHANES_data/11-12")
+
+## -------- DATASETS -------- ##
+# demo
+demo1112 <- read.xport("DEMO_G.XPT") %>% as_tibble()
+dim(demo1112)
+# pregnancy 
+preg1112 <- read.xport("UCPREG_G.XPT") %>% as_tibble()
+dim(preg1112)
+# urinary metals 
+ur1112 <- read.xport("UHM_G.XPT") %>% as_tibble()
+dim(ur1112)
+# urinary arsenic
+as1112 <- read.xport("UAS_G.XPT") %>% as_tibble() %>% select(- WTSA2YR, -URXUCR) # remove duplicate variables 
+dim(as1112)
+# blood metals
+bl1112 <- read.xport("PBCD_G.XPT") # includes blood mercury, lead, cadmium 
+dim(bl1112)
+# serum metals
+sr1112 <- read.xport("CUSEZN_G.XPT") %>% select(- WTSA2YR, -URXUCR) # remove duplicate variables 
+dim(sr1112) # includes serum Cu, Se, Zn
+
+## -------- MERGE -------- ##
+# merge (Annie's way)
+nh1112 <-merge(demo1112,ur1112,by="SEQN",all=T)
+nh1112 <-merge(nh1112,as1112,by="SEQN",all=T)
+nh1112 <-merge(nh1112,bl1112,by="SEQN",all=T)
+nh1112 <-merge(nh1112,preg1112,by="SEQN",all=T)
+nh1112 <-merge(nh1112,sr1112,by="SEQN",all=T)
+nh1112 <- as_tibble(nh1112)
+dim(nh1112) # 9756 col, 114 var
+colnames(nh1112) # --> same problem 
+# checking the two repeated variables are the same (weights and urinary creatinine) --> they are, remove from 2nd file before merging 
+# nh0910 has demo, urine metals, as urine metabolites, blood metals 
+#
 ###### 1. NHANES 2007-2008 ####
 ######      1.A Clean & Tidy ####
 # pregnancy status by demographic variable 
@@ -829,24 +869,21 @@ b_metals = nh0910_f %>%
 
 # PERCENT AT/ABOVE LOD 
 b_metals_total <- b_metals %>% count(SEQN) %>% tally(n) %>% pull(n)
-b_metals_ALOD <- b_metals %>% select(contains("LBX")) 
-b_metals_names <- colnames(b_metals_ALOD) %>% str_remove("LBXB") %>% str_remove("LBX")
+b_metals_ALOD <- b_metals %>% select(contains("LBD") & contains("LC"))
+b_metals_names <- colnames(b_metals_ALOD) %>% str_remove("LBDB") %>% str_remove("LBD") %>% str_remove("LC")
 
-cd_n <- b_metals %>% filter(LBXBCD <= 0.14) %>% count(SEQN) %>% tally(n) %>% pull(n)
-cd_pct <- cd_n / b_metals_total
-pb_n <- b_metals %>% filter(LBXBPB <= 0.18) %>% count(SEQN) %>% tally(n) %>% pull(n)
-pb_pct <- pb_n / b_metals_total
-thg_n <- b_metals %>% filter(LBDTHGLC == 1) %>% count(SEQN) %>% tally(n) %>% pull(n)
-thg_pct <- thg_n / b_metals_total 
+cd_pct <- b_metals %>% tabyl(LBDBCDLC) %>% filter(LBDBCDLC == 0) %>% pull(percent) 
+pb_pct <- b_metals %>% tabyl(LBDBPBLC) %>% filter(LBDBPBLC == 0) %>% pull(percent) 
+thg_pct <- b_metals %>% tabyl(LBDTHGLC) %>% filter(LBDTHGLC == 0) %>% pull(percent) 
 
 b_metals_ALOD_table <- rbind(cd_pct, pb_pct, thg_pct) 
-colnames(b_metals_ALOD_table) <- "percent_BLOD"
+colnames(b_metals_ALOD_table) <- "percent_aLOD"
 
 b_metals_ALOD_table <- b_metals_ALOD_table %>% 
   as_tibble() %>% 
   mutate(
     metal = b_metals_names, 
-    use = ifelse(percent_BLOD < 0.4, "yes", "no")) %>% 
+    use = ifelse(percent_aLOD >= 0.4, "yes", "no")) %>% 
   relocate(metal)
 
 b_metals_ALOD_table
@@ -1149,6 +1186,222 @@ NH0910_B
 
 ###### 3. NHANES 2011-2012 ####
 ######      3.A Clean & Tidy ####
+# pregnancy status by demographic variable 
+nh1112 %>% 
+  filter(RIAGENDR == 2) %>%                         # 1 = male, 2 = female            --> remove 5,053
+  filter(RIDAGEYR >= 20 & RIDAGEYR <= 44) %>%       # restrict age                    --> remove 1,208
+  tabyl(RIDEXPRG) %>% adorn_totals()                # correct numbers based on NHANES DEMO documentation
+                                                    # 57 pregnant, 1066 not, 55 cannot ascertain 
+# pregnancy status by lab variable 
+nh1112 %>% 
+  filter(RIAGENDR == 2) %>%                         # 1 = male, 2 = female            --> remove 5,053
+  filter(RIDAGEYR >= 20 & RIDAGEYR <= 44) %>%       # restrict age                    --> remove 1,208
+  tabyl(URXPREG) %>% adorn_totals()                 # 55 positive, 1094 negative, 18 not done, 41 missing 
+
+# pregnancy status comparison
+nh1112 %>% 
+  as_tibble() %>% 
+  tabyl(RIDEXPRG, URXPREG) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_title()
+
+# pregnancy status - NEW VARIABLE 
+nh1112 %>% 
+  as_tibble() %>% 
+  mutate(preg_status = ifelse(RIDEXPRG == 1, 1, 0)) %>% 
+  mutate(preg_status1 = case_when(
+    RIDEXPRG == 1 & URXPREG == 1 ~ 1, 
+    URXPREG == 2 ~ 0)) %>% 
+  tabyl(preg_status1) # use this one
+
+# race/ethnicity:    
+nh1112 %>%                                          # 1 = Mexican-American 
+  tabyl(RIDRETH1)                                   # 2 = Other Hispanic 
+# 3 = Non-Hispanic White 
+# 4 = Non-Hispanic Black
+# 5 = Other race (incl. multi-racial)
+
+# CREATE DATASET --- limit to females aged 20-44 (N=1,208) and make pregnancy variable 
+nh1112_f = nh1112 %>% 
+  filter(RIAGENDR == 2) %>%                         # 1 = male, 2 = female            --> remove 5,053
+  filter(RIDAGEYR >= 20 & RIDAGEYR <= 44) %>%       # restrict age                    --> remove 1,208
+  mutate(preg_status = case_when(                   # preg_status = 1  --> pregnant 
+    RIDEXPRG == 1 & URXPREG == 1 ~ 1,               # preg_status = 0  --> not pregnant
+    URXPREG == 2 ~ 0))                              # preg_status = NA --> missing or not known 
+
+######          - URINARY DATA ####
+# N=2,720 with urinary metal measurements in TOTAL (from original NHANES data)
+# 820 missing urinary creatinine in subset 
+nh0708_f %>% 
+  select(URXUCR, contains("URX")) %>% 
+  filter(is.na(URXUCR)) %>% 
+  tabyl(URXUCR)
+
+# MAKE CREATININE INTO CORRECT UNITS + MAKE NEW URINARY METAL VAR
+u_metals = nh0708_f %>% 
+  drop_na(URXUCR) %>%                               # drop missing urinary creatinine --> remove 388
+  filter(!is.na(URXUBA)) %>%                        # drop missing urinary u_metals     --> remove 6
+  mutate(cr_g_l = URXUCR / 100) %>%                 # urinary creatinine in mg/dL     --> /100 for g/L
+  mutate(                                           # create u_metals in ug/g cr        --> /cr_g_l for ug/g creatinine 
+    uba_ugg = URXUBA / cr_g_l, 
+    ube_ugg = URXUBE / cr_g_l, 
+    ucd_ugg = URXUCD / cr_g_l, 
+    uco_ugg = URXUCO / cr_g_l, 
+    ucs_ugg = URXUCS / cr_g_l, 
+    umo_ugg = URXUMO / cr_g_l, 
+    upb_ugg = URXUPB / cr_g_l, 
+    upt_ugg = URXUPT / cr_g_l, 
+    usb_ugg = URXUSB / cr_g_l, 
+    utl_ugg = URXUTL / cr_g_l, 
+    uw_ugg = URXUTU / cr_g_l, 
+    uu_ugg = URXUUR / cr_g_l)
+
+
+# PERCENT AT/ABOVE LOD 
+u_metals_ALOD <- u_metals %>% select(contains("URD")) %>% select(1:12)
+u_metals_names <- colnames(u_metals_ALOD) %>% str_remove("URDU") %>% str_remove("LC") %>% str_to_title()
+
+ba_pct <- u_metals %>% tabyl(URDUBALC) %>% filter(URDUBALC == 0) %>% pull(percent) 
+be_pct <- u_metals %>% tabyl(URDUBELC) %>% filter(URDUBELC == 0) %>% pull(percent)
+cd_pct <- u_metals %>% tabyl(URDUCDLC) %>% filter(URDUCDLC == 0) %>% pull(percent) 
+co_pct <- u_metals %>% tabyl(URDUCOLC) %>% filter(URDUCOLC == 0) %>% pull(percent)
+cs_pct <- u_metals %>% tabyl(URDUCSLC) %>% filter(URDUCSLC == 0) %>% pull(percent)
+mo_pct <- u_metals %>% tabyl(URDUMOLC) %>% filter(URDUMOLC == 0) %>% pull(percent) 
+pb_pct <- u_metals %>% tabyl(URDUPBLC) %>% filter(URDUPBLC == 0) %>% pull(percent) 
+pt_pct <- u_metals %>% tabyl(URDUPTLC) %>% filter(URDUPTLC == 0) %>% pull(percent) 
+sb_pct <- u_metals %>% tabyl(URDUSBLC) %>% filter(URDUSBLC == 0) %>% pull(percent)
+tl_pct <- u_metals %>% tabyl(URDUTLLC) %>% filter(URDUTLLC == 0) %>% pull(percent) 
+w_pct <- u_metals %>% tabyl(URDUTULC) %>% filter(URDUTULC == 0) %>% pull(percent) 
+u_pct <- u_metals %>% tabyl(URDUURLC) %>% filter(URDUURLC == 0) %>% pull(percent) 
+
+u_metals_ALOD_table <- rbind(ba_pct, be_pct, cd_pct, co_pct, cs_pct, mo_pct, pb_pct, pt_pct, sb_pct, tl_pct, w_pct, u_pct) 
+colnames(u_metals_ALOD_table) <- "percent_aLOD"
+
+u_metals_ALOD_table <- u_metals_ALOD_table %>% 
+  as_tibble() %>% 
+  mutate(
+    metal = u_metals_names, 
+    use = ifelse(percent_aLOD >= 0.4, "yes", "no")) %>% 
+  relocate(metal)
+
+u_metals_ALOD_table
+
+# URINE u_metals TO USE (2007-2008)
+u_metals_ALOD <- nh0708_f %>% select(contains("URD")) %>% select(1:12) %>% select(-contains(c("be", "pt")))
+u_metals_names <- colnames(u_metals_ALOD) %>% str_remove("URDU") %>% str_remove("LC") %>% str_to_title()
+
+# u_metals DATAFRAME ONLY --- grab urine u_metals corrected for urinary creatinine & survey variables  
+u_metals <- u_metals %>% 
+  select(contains("ugg"), RIDRETH1, preg_status, SDMVPSU, SDMVSTRA, WTSA2YR) %>% 
+  select(-contains(c("be", "pt"))) %>% 
+  drop_na()
+dim(u_metals)
+head(u_metals)
+
+######          - As SPECIES DATA ####
+# N=2,720 with urinary As species measurements in TOTAL (from original NHANES data)
+colnames(as0708)
+# 820 missing urinary creatinine in subset 
+nh0708_f %>% 
+  select(URXUCR, contains("URX")) %>% 
+  filter(is.na(URXUCR)) %>% 
+  tabyl(URXUCR)
+
+# MAKE CREATININE INTO CORRECT UNITS + MAKE NEW URINARY AS VAR (N=372)
+as_metals = nh0708_f %>% 
+  drop_na(URXUCR) %>%                               # drop missing urinary creatinine --> remove 388
+  drop_na(URXUAS) %>%                               # drop missing total As           --> remove 11
+  drop_na(URXUAS3) %>%                              # drop missing As species         --> remove 5
+  mutate(cr_g_l = URXUCR / 100) %>%                 # urinary creatinine in mg/dL     --> /100 for g/L
+  mutate(                                           # create u_metals in ug/g cr      --> /cr_g_l for ug/g creatinine 
+    uas_ugg = URXUAS / cr_g_l, 
+    uas3_ugg = URXUAS3 / cr_g_l, 
+    uas5_ugg = URXUAS5 / cr_g_l, 
+    uab_ugg = URXUAB / cr_g_l, 
+    uac_ugg = URXUAC / cr_g_l, 
+    udma_ugg = URXUDMA / cr_g_l, 
+    umma_ugg = URXUMMA / cr_g_l, 
+    utmo_ugg = URXUTM / cr_g_l)
+
+# PERCENT AT/ABOVE LOD 
+as_metals_ALOD <- as_metals %>% select(contains("URD")) %>% select(13:20)
+as_metals_names <- colnames(as_metals_ALOD) %>% str_remove("URDU") %>% str_remove("LC") %>% str_remove("L")
+as_metals_names <- str_replace(as_metals_names, "DA", "DMA")
+as_metals_names <- str_replace(as_metals_names, "TM", "TMO")
+
+as_pct <- as_metals %>% tabyl(URDUASLC) %>% filter(URDUASLC == 0) %>% pull(percent) 
+a3_pct <- as_metals %>% tabyl(URDUA3LC) %>% filter(URDUA3LC == 0) %>% pull(percent)
+a5_pct <- as_metals %>% tabyl(URDUA5LC) %>% filter(URDUA5LC == 0) %>% pull(percent) 
+ab_pct <- as_metals %>% tabyl(URDUABLC) %>% filter(URDUABLC == 0) %>% pull(percent)
+ac_pct <- as_metals %>% tabyl(URDUACLC) %>% filter(URDUACLC == 0) %>% pull(percent)
+dma_pct <- as_metals %>% tabyl(URDUDALC) %>% filter(URDUDALC == 0) %>% pull(percent) 
+mma_pct <- as_metals %>% tabyl(URDUMMAL) %>% filter(URDUMMAL == 0) %>% pull(percent) 
+tmo_pct <- as_metals %>% tabyl(URDUTMLC) %>% filter(URDUTMLC == 0) %>% pull(percent) 
+
+as_metals_ALOD_table <- rbind(as_pct, a3_pct, a5_pct, ab_pct, ac_pct, dma_pct, mma_pct, tmo_pct) 
+colnames(as_metals_ALOD_table) <- "percent_aLOD"
+
+as_metals_ALOD_table <- as_metals_ALOD_table %>% 
+  as_tibble() %>% 
+  mutate(
+    metal = as_metals_names, 
+    use = ifelse(percent_aLOD >= 0.4, "yes", "no")) %>% 
+  relocate(metal)
+
+as_metals_ALOD_table
+
+# URINE As metals TO USE (2007-2008)
+as_metals_ALOD <- as_metals %>% select(contains("URD")) %>% select(13:20) %>% select(-contains(c("a3", "a5", "ac", "tm")))
+as_metals_names <- colnames(as_metals_ALOD) %>% str_remove("URDU") %>% str_remove("LC") %>% str_remove("L")
+as_metals_names <- str_replace(as_metals_names, "DA", "DMA")
+
+# As metals DATAFRAME ONLY --- grab as species corrected for urinary creatinine & survey variables (N=372)
+as_metals <- as_metals %>% 
+  select(contains("ugg"), RIDRETH1, preg_status, SDMVPSU, SDMVSTRA, WTSA2YR) %>% 
+  select(-contains(c("as3", "as5", "ac", "tm"))) %>% 
+  drop_na()
+dim(as_metals)
+head(as_metals)
+
+######          - BLOOD DATA ####
+# N=9307 with urinary As species measurements in TOTAL (from original NHANES data)
+dim(bl0708)
+colnames(bl0708)
+
+# drop missing blood metals
+b_metals = nh0708_f %>% 
+  drop_na(LBXBCD)                                   # drop missing blood metals --> remove 106
+
+# PERCENT AT/ABOVE LOD 
+b_metals_total <- b_metals %>% count(SEQN) %>% tally(n) %>% pull(n)
+b_metals_ALOD <- b_metals %>% select(contains("LBX")) 
+b_metals_names <- colnames(b_metals_ALOD) %>% str_remove("LBXB") %>% str_remove("LBX")
+
+cd_n <- b_metals %>% filter(LBXBCD <= 0.14) %>% count(SEQN) %>% tally(n) %>% pull(n)
+cd_pct <- cd_n / b_metals_total
+pb_n <- b_metals %>% filter(LBXBPB <= 0.18) %>% count(SEQN) %>% tally(n) %>% pull(n)
+pb_pct <- pb_n / b_metals_total
+thg_n <- b_metals %>% filter(LBDTHGLC == 1) %>% count(SEQN) %>% tally(n) %>% pull(n)
+thg_pct <- thg_n / b_metals_total 
+
+b_metals_ALOD_table <- rbind(cd_pct, pb_pct, thg_pct) 
+colnames(b_metals_ALOD_table) <- "percent_BLOD"
+
+b_metals_ALOD_table <- b_metals_ALOD_table %>% 
+  as_tibble() %>% 
+  mutate(
+    metal = b_metals_names, 
+    use = ifelse(percent_BLOD < 0.4, "yes", "no")) %>% 
+  relocate(metal)
+
+b_metals_ALOD_table
+
+# Blood metals DATAFRAME ONLY --- grab as species corrected for urinary creatinine & survey variables (N=1102)
+b_metals <- b_metals %>% 
+  select(contains("LBX"), RIDRETH1, preg_status, SDMVPSU, SDMVSTRA, WTMEC2YR) 
+dim(b_metals)
+head(b_metals)
+
 ######      3.B URINARY ANALYSES ####
 ######      3.C As SPECIES ANALYSES ####
 ######      3.D BLOOD ANALYSES ####
